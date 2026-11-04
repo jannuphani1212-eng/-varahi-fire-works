@@ -1,52 +1,369 @@
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
-import { firebaseConfig, isFirebaseConfigured } from "./firebase-config.js";
+
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+import {
+  firebaseConfig,
+  isFirebaseConfigured
+} from "./firebase-config.js";
 
 const $ = id => document.getElementById(id);
-const loginPanel=$("loginPanel"), dashboard=$("dashboard");
-let auth, db, storage, owner=null, records=[];
-function message(id,text){$(id).textContent=text;}
-function escapeHtml(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-if (!isFirebaseConfigured) message("loginMessage","First complete Firebase configuration in firebase-config.js and deploy the security rules.");
-else {
-  const app=initializeApp(firebaseConfig); auth=getAuth(app); db=getFirestore(app); storage=getStorage(app);
-  onAuthStateChanged(auth,user=>{owner=user;loginPanel.hidden=!!user;dashboard.hidden=!user;if(user) refresh();});
+
+const loginPanel = $("loginPanel");
+const dashboard = $("dashboard");
+
+let auth = null;
+let db = null;
+let owner = null;
+let records = [];
+let busy = false;
+
+function message(id, text) {
+  $(id).textContent = text;
 }
-$("loginForm").addEventListener("submit",async e=>{e.preventDefault();if(!auth)return;message("loginMessage","Signing in…");try{await signInWithEmailAndPassword(auth,$("email").value,$("password").value);message("loginMessage","");}catch(err){message("loginMessage","Sign in failed: "+err.message);}});
-$("signOut").addEventListener("click",()=>signOut(auth));
-$("resetForm").addEventListener("click",resetForm);
-function resetForm(){ $("entryForm").reset();$("entryId").value="";$("formTitle").textContent="Add showcase entry";$("published").checked=true;message("formMessage","");}
-async function refresh(){
-  try{const snap=await getDocs(query(collection(db,"showcaseEntries"),orderBy("createdAt","desc")));records=snap.docs.map(d=>({id:d.id,...d.data()}));$("totalCount").textContent=records.length;$("publishedCount").textContent=records.filter(x=>x.published).length;$("hiddenCount").textContent=records.filter(x=>!x.published).length;renderList();}
-  catch(err){$("entriesList").textContent="Could not load entries. Check Firestore rules: "+err.message;}
+
+function setBusy(value) {
+  busy = value;
+  $("saveBtn").disabled = value;
 }
-function renderList(){
-  const host=$("entriesList");host.innerHTML="";
-  if(!records.length){host.textContent="No entries created yet.";return;}
-  records.forEach(item=>{const row=document.createElement("div");row.className="entry-row";row.innerHTML=`<div><b>${escapeHtml(item.name)}</b><small>${escapeHtml(item.category||"")} · ${item.published?"Published":"Hidden"} · ${(item.photos||[]).length} photo(s)</small></div><div class="entry-actions"><button data-edit="${item.id}" class="secondary">Edit</button><button data-toggle="${item.id}" class="secondary">${item.published?"Hide":"Publish"}</button><button data-delete="${item.id}" class="danger">Delete</button></div>`;host.appendChild(row);});
-  host.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editEntry(b.dataset.edit));
-  host.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=()=>toggleEntry(b.dataset.toggle));
-  host.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>removeEntry(b.dataset.delete));
+
+function validImageUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
-function editEntry(id){const x=records.find(r=>r.id===id);if(!x)return;$("entryId").value=id;$("name").value=x.name||"";$("category").value=x.category||"";$("description").value=x.description||"";$("published").checked=!!x.published;$("formTitle").textContent="Edit showcase entry";message("formMessage",`Editing ${x.name}. Leave photos empty to keep existing photos.`);window.scrollTo({top:0,behavior:"smooth"});}
-async function uploadPhotos(files){
-  if(files.length>8)throw new Error("Please select no more than 8 images.");
-  const urls=[];
-  for(const file of files){if(!file.type.startsWith("image/"))throw new Error("Only image files are allowed.");if(file.size>8*1024*1024)throw new Error("Each image must be 8 MB or smaller.");const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");const path=`showcase/${owner.uid}/${Date.now()}_${crypto.randomUUID()}_${safe}`;const r=ref(storage,path);await uploadBytes(r,file,{contentType:file.type});urls.push(await getDownloadURL(r));}
-  return urls;
+
+function getPhotoUrls() {
+  const raw = $("photoUrls").value.trim();
+
+  if (!raw) return [];
+
+  const urls = raw.split(/\r?\n/)
+    .map(url => url.trim())
+    .filter(Boolean);
+
+  if (urls.length > 8) {
+    throw new Error("Please use no more than 8 image URLs.");
+  }
+
+  for (const url of urls) {
+    if (!validImageUrl(url)) {
+      throw new Error("Every image must have a valid HTTPS URL.");
+    }
+  }
+
+  return [...new Set(urls)];
 }
-$("entryForm").addEventListener("submit",async e=>{
- e.preventDefault();if(!owner)return;
- const btn=$("saveBtn");btn.disabled=true;message("formMessage","Saving entry and uploading selected photos…");
- try{
-  const id=$("entryId").value;const old=records.find(r=>r.id===id);const chosen=[...$("photos").files];const uploaded=chosen.length?await uploadPhotos(chosen):[];
-  const data={name:$("name").value.trim(),category:$("category").value.trim(),description:$("description").value.trim(),published:$("published").checked,photos:uploaded.length?uploaded:(old?.photos||[]),updatedAt:serverTimestamp()};
-  if(!data.name||!data.category)throw new Error("Name and category are required.");
-  if(id)await updateDoc(doc(db,"showcaseEntries",id),data);else await addDoc(collection(db,"showcaseEntries"),{...data,createdAt:serverTimestamp()});
-  resetForm();message("formMessage","Saved successfully.");await refresh();
- }catch(err){message("formMessage","Save failed: "+err.message);}finally{btn.disabled=false;}
+
+function resetForm() {
+  $("entryForm").reset();
+  $("entryId").value = "";
+  $("formTitle").textContent = "Add showcase entry";
+  $("published").checked = true;
+  message("formMessage", "");
+}
+
+function showDashboard(user) {
+  owner = user;
+  loginPanel.hidden = !!user;
+  dashboard.hidden = !user;
+
+  if (user) {
+    refresh();
+  } else {
+    records = [];
+    $("entriesList").textContent = "Sign in to manage entries.";
+    $("totalCount").textContent = "0";
+    $("publishedCount").textContent = "0";
+    $("hiddenCount").textContent = "0";
+  }
+}
+
+function updateStats() {
+  $("totalCount").textContent = records.length;
+  $("publishedCount").textContent =
+    records.filter(item => item.published === true).length;
+  $("hiddenCount").textContent =
+    records.filter(item => item.published !== true).length;
+}
+
+function renderList() {
+  const host = $("entriesList");
+  host.replaceChildren();
+
+  if (!records.length) {
+    host.textContent = "No entries created yet.";
+    return;
+  }
+
+  records.forEach(item => {
+    const row = document.createElement("article");
+    row.className = "entry-row";
+
+    const details = document.createElement("div");
+
+    const name = document.createElement("b");
+    name.textContent = item.name || "Untitled entry";
+
+    const info = document.createElement("small");
+    info.textContent =
+      `${item.category || "Showcase"} · ` +
+      `${item.published ? "Published" : "Hidden"} · ` +
+      `${(item.photos || []).length} photo(s)`;
+
+    details.append(name, info);
+
+    const actions = document.createElement("div");
+    actions.className = "entry-actions";
+
+    const edit = document.createElement("button");
+    edit.type = "button";
+    edit.className = "secondary-btn";
+    edit.textContent = "Edit";
+    edit.addEventListener("click", () => editEntry(item.id));
+
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "secondary-btn";
+    toggle.textContent = item.published ? "Hide" : "Publish";
+    toggle.addEventListener("click", () => toggleEntry(item.id));
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "danger-btn";
+    remove.textContent = "Delete";
+    remove.addEventListener("click", () => removeEntry(item.id));
+
+    actions.append(edit, toggle, remove);
+    row.append(details, actions);
+    host.appendChild(row);
+  });
+}
+
+async function refresh() {
+  if (!owner || !db) return;
+
+  message("formMessage", "Loading entries…");
+
+  try {
+    const snapshot = await getDocs(
+      collection(db, "showcaseEntries")
+    );
+
+    if (!owner) return;
+
+    records = snapshot.docs.map(item => ({
+      id: item.id,
+      ...item.data()
+    }));
+
+    records.sort((a, b) =>
+      (a.name || "").localeCompare(b.name || "")
+    );
+
+    updateStats();
+    renderList();
+    message("formMessage", "");
+  } catch (error) {
+    console.error(error);
+    $("entriesList").textContent =
+      "Could not load entries: " + error.message;
+  }
+}
+
+function editEntry(id) {
+  const item = records.find(record => record.id === id);
+  if (!item) return;
+
+  $("entryId").value = item.id;
+  $("name").value = item.name || "";
+  $("category").value = item.category || "";
+  $("description").value = item.description || "";
+  $("photoUrls").value = (item.photos || []).join("\n");
+  $("published").checked = !!item.published;
+
+  $("formTitle").textContent = "Edit showcase entry";
+
+  message(
+    "formMessage",
+    "Editing entry. Keep or replace the image URLs as needed."
+  );
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+$("loginForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  if (!auth) {
+    message("loginMessage", "Firebase is not configured.");
+    return;
+  }
+
+  const button = $("loginForm").querySelector("button");
+  button.disabled = true;
+  message("loginMessage", "Signing in…");
+
+  try {
+    await signInWithEmailAndPassword(
+      auth,
+      $("email").value.trim(),
+      $("password").value
+    );
+
+    $("password").value = "";
+    message("loginMessage", "");
+  } catch (error) {
+    console.error(error);
+    message("loginMessage", "Sign-in failed. Check your email and password.");
+  } finally {
+    button.disabled = false;
+  }
 });
-async function toggleEntry(id){try{const x=records.find(r=>r.id===id);await updateDoc(doc(db,"showcaseEntries",id),{published:!x.published,updatedAt:serverTimestamp()});await refresh();}catch(e){alert("Update failed: "+e.message);}}
-async function removeEntry(id){const x=records.find(r=>r.id===id);if(!confirm(`Delete "${x?.name||"this entry"}"? This cannot be undone.`))return;try{await deleteDoc(doc(db,"showcaseEntries",id));await refresh();}catch(e){alert("Delete failed: "+e.message);}}
+
+$("signOut").addEventListener("click", async () => {
+  if (!auth) return;
+
+  try {
+    await signOut(auth);
+    resetForm();
+  } catch (error) {
+    message("formMessage", "Sign-out failed: " + error.message);
+  }
+});
+
+$("resetForm").addEventListener("click", resetForm);
+
+$("entryForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  if (!owner || !db || busy) return;
+
+  setBusy(true);
+  message("formMessage", "Saving entry…");
+
+  try {
+    const name = $("name").value.trim();
+    const category = $("category").value.trim();
+    const description = $("description").value.trim();
+    const photos = getPhotoUrls();
+    const id = $("entryId").value;
+
+    if (!name || !category) {
+      throw new Error("Entry name and category are required.");
+    }
+
+    const data = {
+      name,
+      category,
+      description,
+      photos,
+      photo: photos[0] || "",
+      published: $("published").checked,
+      updatedAt: serverTimestamp()
+    };
+
+    if (id) {
+      await updateDoc(
+        doc(db, "showcaseEntries", id),
+        data
+      );
+    } else {
+      await addDoc(
+        collection(db, "showcaseEntries"),
+        {
+          ...data,
+          createdAt: serverTimestamp()
+        }
+      );
+    }
+
+    resetForm();
+    message("formMessage", "Entry saved successfully.");
+    await refresh();
+
+  } catch (error) {
+    console.error(error);
+    message("formMessage", "Save failed: " + error.message);
+  } finally {
+    setBusy(false);
+  }
+});
+
+async function toggleEntry(id) {
+  const item = records.find(record => record.id === id);
+  if (!item || !owner) return;
+
+  try {
+    await updateDoc(
+      doc(db, "showcaseEntries", id),
+      {
+        published: !item.published,
+        updatedAt: serverTimestamp()
+      }
+    );
+
+    await refresh();
+  } catch (error) {
+    alert("Could not update entry: " + error.message);
+  }
+}
+
+async function removeEntry(id) {
+  const item = records.find(record => record.id === id);
+  if (!item || !owner) return;
+
+  const confirmed = confirm(
+    `Delete "${item.name}"? This cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await deleteDoc(doc(db, "showcaseEntries", id));
+    message("formMessage", "Entry deleted successfully.");
+    await refresh();
+  } catch (error) {
+    alert("Could not delete entry: " + error.message);
+  }
+}
+
+if (!isFirebaseConfigured) {
+  message(
+    "loginMessage",
+    "Firebase configuration is incomplete. Check firebase-config.js."
+  );
+} else {
+  try {
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+
+    onAuthStateChanged(auth, user => {
+      showDashboard(user);
+    });
+  } catch (error) {
+    console.error(error);
+    message("loginMessage", "Firebase initialization failed.");
+  }
+}
