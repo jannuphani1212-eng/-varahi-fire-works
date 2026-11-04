@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#071d2b">
+  <meta name="description" content="VARAHI FIRE WORKS — fireworks information and product showcase, Krishna Lanka, Vijayawada.">
+  <title>VARAHI FIRE WORKS | Vijayawada</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="#"><span class="brand-mark">VF</span><span><b>VARAHI FIRE WORKS</b><small>LIGHT UP YOUR CELEBRATIONS</small></span></a>
+  <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">☰</button>
+  <nav id="nav"><a href="#home">Home</a><a href="#showcase">Showcase</a><a href="#about">About</a><a href="#contact">Contact</a><a class="admin-link" href="admin.html">Owner login</a></nav>
+</header>
+<main>
+<section class="hero" id="home">
+  <div class="hero-copy"><span class="eyebrow">CELEBRATIONS • TRADITION • JOY</span>
+    <h1>Make every celebration <em>shine.</em></h1>
+    <p>Explore our fireworks information showcase and learn about our business in Vijayawada.</p>
+    <a class="primary-btn" href="#showcase">Explore showcase <span>↗</span></a>
+  </div>
+  <div class="hero-art" aria-hidden="true"><div class="orb orb-one"></div><div class="orb orb-two"></div><div class="spark">✦</div><div class="hero-stamp">VARAHI<br><small>FIRE WORKS</small></div></div>
+</section>
+<section class="intro-strip"><div><b>VARAHI FIRE WORKS</b><span>Krishna Lanka, Vijayawada, Andhra Pradesh</span></div><span class="strip-note">A business information showcase</span></section>
+<section class="section" id="showcase">
+  <div class="section-heading"><div><span class="eyebrow">DISCOVER OUR RANGE</span><h2>Product showcase</h2></div><p>Browse informational product entries. Availability and sale are not represented on this website.</p></div>
+  <div class="toolbar"><label class="search"><span>⌕</span><input id="searchInput" type="search" placeholder="Search showcase..." aria-label="Search showcase"></label><select id="categoryFilter" aria-label="Filter category"><option value="">All categories</option></select></div>
+  <div id="status" class="status">Loading showcase…</div><div id="productGrid" class="product-grid"></div>
+</section>
+<section class="about-section" id="about"><div><span class="eyebrow">OUR BUSINESS</span><h2>Celebrations bring us together.</h2></div><p>VARAHI FIRE WORKS is based in Krishna Lanka, Vijayawada, Andhra Pradesh. This website provides general business and product information only.</p></section>
+<section class="contact-section" id="contact"><div><span class="eyebrow">FIND US</span><h2>VARAHI FIRE WORKS</h2><p>Krishna Lanka, Vijayawada, Andhra Pradesh, India</p></div><div class="contact-card"><b>Business information</b><p>For general business information, please visit the business in person. This website does not accept online orders or payments.</p></div></section>
+</main>
+<footer><a class="brand" href="#"><span class="brand-mark">VF</span><span><b>VARAHI FIRE WORKS</b><small>VIJAYAWADA</small></span></a><span>© <span id="year"></span> VARAHI FIRE WORKS</span><a href="privacy.html">Privacy notice</a></footer>
+<div class="modal" id="detailModal" aria-hidden="true"><div class="modal-backdrop" data-close></div><article class="modal-card"><button class="close-btn" data-close aria-label="Close">×</button><div id="detailContent"></div></article></div>
+<script type="module" src="app.js"></script>
+</body></html>

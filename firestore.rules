@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner() {
+      return request.auth != null && request.auth.uid == "REPLACE_WITH_OWNER_AUTH_UID";
+    }
+    match /showcaseEntries/{entryId} {
+      allow read: if resource.data.published == true || isOwner();
+      allow create: if isOwner();
+      allow update, delete: if isOwner();
+    }
+  }
+}

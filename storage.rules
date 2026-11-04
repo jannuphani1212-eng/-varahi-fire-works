@@ -1,0 +1,14 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isOwner() {
+      return request.auth != null && request.auth.uid == "REPLACE_WITH_OWNER_AUTH_UID";
+    }
+    match /showcase/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner() && userId == request.auth.uid
+                   && request.resource.size < 8 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+  }
+}
