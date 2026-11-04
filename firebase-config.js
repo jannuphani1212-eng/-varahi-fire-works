@@ -1,5 +1,5 @@
 const firebaseConfig = {
-  apiKey: "AIzaSyBCAII2SWUN4b66pulyNNmOtfkrdpITskI",
+  apiKey: "YOUR_EXISTING_API_KEY",
   authDomain: "varahi-fire-works-new.firebaseapp.com",
   projectId: "varahi-fire-works-new",
   storageBucket: "varahi-fire-works-new.firebasestorage.app",
