@@ -6,9 +6,12 @@ service firebase.storage {
     }
     match /showcase/{userId}/{fileName} {
       allow read: if true;
-      allow write: if isOwner() && userId == request.auth.uid
-                   && request.resource.size < 8 * 1024 * 1024
-                   && request.resource.contentType.matches('image/.*');
+      // Deletes have no request.resource, so validate ownership separately.
+      allow delete: if isOwner() && userId == request.auth.uid;
+      allow create, update: if isOwner()
+                            && userId == request.auth.uid
+                            && request.resource.size < 8 * 1024 * 1024
+                            && request.resource.contentType.matches('image/.*');
     }
   }
 }
