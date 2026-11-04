@@ -135,7 +135,7 @@ $("entryForm").addEventListener("submit", async e => {
     const name = $("name").value.trim(), category = $("category").value.trim();
     if (!name || !category) throw new Error("Name and category are required.");
     const chosen = [...$("photos").files];
-    const oldPhotos = Array.isArray(old?.photos) ? old.photos : [];
+    const oldPhotos = Array.isArray(old?.photos) ? old.photos : (typeof old?.photo === "string" && old.photo ? [old.photo] : []);
     if (oldPhotos.length + chosen.length > MAX_PHOTOS) throw new Error("This entry can have up to 8 photos. Remove the entry and recreate it to replace its current photos.");
     if (chosen.length) uploaded = await uploadPhotos(chosen);
     const data = {
