@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isOwner() {
-      return request.auth != null && request.auth.uid == "REPLACE_WITH_OWNER_AUTH_UID";
+      return request.auth != null && request.auth.uid == "5uWlvAXPVbUPfHTnwJizSelOq8t1";
     }
     match /showcaseEntries/{entryId} {
       allow read: if resource.data.published == true || isOwner();
