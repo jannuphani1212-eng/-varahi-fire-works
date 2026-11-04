@@ -1,12 +1,137 @@
+
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Owner Dashboard | VARAHI FIRE WORKS</title><link rel="stylesheet" href="admin.css"></head>
-<body><header><a href="index.html">← Public website</a><b>VARAHI FIRE WORKS <span>OWNER DASHBOARD</span></b></header>
-<main>
-<section class="panel" id="loginPanel"><h1>Owner sign in</h1><p>Sign in using the owner account created in Firebase Authentication.</p><form id="loginForm"><label>Email<input id="email" type="email" required autocomplete="username"></label><label>Password<input id="password" type="password" required autocomplete="current-password"></label><button>Sign in</button></form><p class="message" id="loginMessage"></p></section>
-<section id="dashboard" hidden>
-<div class="dash-head"><div><span class="eyebrow">PRIVATE AREA</span><h1>Showcase manager</h1><p>Manage informational product entries and images.</p></div><button class="secondary" id="signOut">Sign out</button></div>
-<div class="stats"><div><small>Total entries</small><strong id="totalCount">0</strong></div><div><small>Published</small><strong id="publishedCount">0</strong></div><div><small>Hidden</small><strong id="hiddenCount">0</strong></div></div>
-<section class="panel"><h2 id="formTitle">Add showcase entry</h2><form id="entryForm"><input id="entryId" type="hidden"><label>Entry name<input id="name" maxlength="100" required></label><label>Category<input id="category" maxlength="60" required placeholder="Example: Sparklers"></label><label>Description<textarea id="description" rows="4" maxlength="1200"></textarea></label><label>Photos (select up to 8 from your phone)<input id="photos" type="file" accept="image/*" multiple></label><p class="hint">Choose images from your Android gallery. Existing images are kept when editing unless you remove the entry and create it again.</p><label class="check"><input id="published" type="checkbox" checked> Publish this entry on the public showcase</label><div class="actions"><button id="saveBtn">Save entry</button><button type="button" class="secondary" id="resetForm">Clear form</button></div></form><p class="message" id="formMessage"></p></section>
-<section class="panel"><h2>All entries</h2><div id="entriesList" class="entries-list">Loading…</div></section>
-</section>
-</main><script type="module" src="admin.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071d2b">
+  <meta name="description" content="Private owner dashboard for VARAHI FIRE WORKS.">
+  <title>Owner Dashboard | VARAHI FIRE WORKS</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+  <header class="topbar">
+    <a class="back-link" href="index.html">← Public website</a>
+    <div class="brand">
+      <span class="brand-name">VARAHI FIRE WORKS</span>
+      <span class="brand-label">OWNER DASHBOARD</span>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="panel login-panel" id="loginPanel">
+      <span class="eyebrow">PRIVATE ACCESS</span>
+      <h1>Welcome back</h1>
+      <p>Sign in with your authorized owner account.</p>
+
+      <form id="loginForm">
+        <label for="email">Email address</label>
+        <input id="email" type="email" required
+          autocomplete="username" placeholder="Owner email">
+
+        <label for="password">Password</label>
+        <input id="password" type="password" required
+          autocomplete="current-password" placeholder="Your password">
+
+        <button type="submit" class="primary-btn">Sign in securely</button>
+      </form>
+
+      <p class="message" id="loginMessage" role="status"></p>
+    </section>
+
+    <section id="dashboard" hidden>
+
+      <div class="dashboard-heading">
+        <div>
+          <span class="eyebrow">OWNER CONTROL CENTER</span>
+          <h1>Showcase manager</h1>
+          <p>Manage your public informational showcase.</p>
+        </div>
+        <button type="button" class="secondary-btn" id="signOut">
+          Sign out
+        </button>
+      </div>
+
+      <div class="stats">
+        <article class="stat-card">
+          <span>Total entries</span>
+          <strong id="totalCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Published</span>
+          <strong id="publishedCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Hidden</span>
+          <strong id="hiddenCount">0</strong>
+        </article>
+      </div>
+
+      <section class="panel">
+        <span class="eyebrow">CONTENT MANAGEMENT</span>
+        <h2 id="formTitle">Add showcase entry</h2>
+        <p>Add an informational entry to your public website.</p>
+
+        <form id="entryForm">
+          <input id="entryId" type="hidden">
+
+          <label for="name">Entry name</label>
+          <input id="name" type="text" maxlength="100"
+            required placeholder="Enter entry name">
+
+          <label for="category">Category</label>
+          <input id="category" type="text" maxlength="60"
+            required placeholder="Example: Sparklers">
+
+          <label for="description">Description</label>
+          <textarea id="description" rows="4" maxlength="1200"
+            placeholder="Enter an informational description"></textarea>
+
+          <label for="photoUrls">Image URLs</label>
+          <textarea id="photoUrls" rows="4"
+            placeholder="Paste one HTTPS image URL per line"></textarea>
+
+          <p class="hint">
+            Use publicly accessible HTTPS image links. Add up to 8 URLs,
+            one per line. Firebase Storage uploads are not used.
+          </p>
+
+          <label class="publish-option">
+            <input id="published" type="checkbox" checked>
+            Publish this entry on the public showcase
+          </label>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-btn" id="saveBtn">
+              Save entry
+            </button>
+            <button type="button" class="secondary-btn" id="resetForm">
+              Clear form
+            </button>
+          </div>
+        </form>
+
+        <p class="message" id="formMessage" role="status"></p>
+      </section>
+
+      <section class="panel">
+        <span class="eyebrow">YOUR CONTENT</span>
+        <h2>All showcase entries</h2>
+        <div id="entriesList" class="entries-list" aria-live="polite">
+          Loading entries…
+        </div>
+      </section>
+
+    </section>
+  </main>
+
+  <footer>
+    <p>VARAHI FIRE WORKS · Owner dashboard</p>
+    <small>Private management area. Informational showcase only.</small>
+  </footer>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>
