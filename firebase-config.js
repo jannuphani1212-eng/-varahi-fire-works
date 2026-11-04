@@ -1,6 +1,5 @@
-
 const firebaseConfig = {
-  apiKey: "YOUR_EXISTING_API_KEY",
+  apiKey: "AIzaSyBCAII2SWUN4b66pulyNNmOtfkrdpITskI",
   authDomain: "varahi-fire-works-new.firebaseapp.com",
   projectId: "varahi-fire-works-new",
   storageBucket: "varahi-fire-works-new.firebasestorage.app",
@@ -12,5 +11,5 @@ const firebaseConfig = {
 export { firebaseConfig };
 
 export const isFirebaseConfigured =
-  firebaseConfig.apiKey !== "YOUR_EXISTING_API_KEY" &&
+  Boolean(firebaseConfig.apiKey) &&
   Boolean(firebaseConfig.projectId);
